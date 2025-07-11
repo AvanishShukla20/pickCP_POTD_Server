@@ -42,7 +42,7 @@ const getRandomProblem = async (req, res) => {
       filtered = problems.filter(p => !solvedSet.has(`${p.contestId}-${p.index}`));
     } else {
       filtered = problems.filter(p => {
-        if (rating && p.rating !== rating) return false;
+        if (rating && p.rating !== parseInt(rating)) return false;
         if (tags.length > 0) {
           const hasAllTags = tags.every(tag => p.tags.includes(tag));
           if (!hasAllTags) return false;
