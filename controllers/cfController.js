@@ -136,14 +136,12 @@ const getSolvedDates = async (req, res) => {
     }
 
     
-    const solvedDates = [];
-
-    if (user.potd?.status === 'solved' && user.potd.date) {
-      solvedDates.push(user.potd.date);
-    }
+    const solvedDates = (user.potd || [])
+      .filter(entry => entry.status === "solved" && entry.date)
+      .map(entry => entry.date);
 
     // Respond with an array of solved dates
-    res.status(200).json({ data : solvedDates });
+    res.status(200).json({ dates : solvedDates });
 
   } catch (error) {
     console.error("Error fetching solved dates:", error.message);
