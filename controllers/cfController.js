@@ -143,7 +143,7 @@ const getSolvedDates = async (req, res) => {
     }
 
     // Respond with an array of solved dates
-    res.status(200).json({ dates: solvedDates });
+    res.status(200).json({ data : solvedDates });
 
   } catch (error) {
     console.error("Error fetching solved dates:", error.message);
