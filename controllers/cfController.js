@@ -12,7 +12,7 @@ const getRandomProblem = async (req, res) => {
       return res.status(400).json({ error: "Codeforces handle is required in request body." });
     }
 
-    // Fetch submissions for user handle from CF API (you need to implement getCFUserSubmissions)
+    // Fetch submissions for user handle from CF API 
     const submissions = await getCFUserSubmissions(codeforcesHandle);
 
     if (!submissions || !Array.isArray(submissions)) {
@@ -26,7 +26,7 @@ const getRandomProblem = async (req, res) => {
         .map(s => `${s.problem.contestId}-${s.problem.index}`)
     );
 
-    // Fetch all problems from CF (you need to implement getCFAllProblems)
+    // Fetch all problems from CF API
     let problems = await getCFAllProblems();
 
     if (!problems || !Array.isArray(problems)) {
@@ -101,10 +101,12 @@ const markPOTD = async (req, res) => {
 
     // Update user POTD status
     const update = {
-      potd: {
-        date: today,
-        problemId,
-        status: 'solved',
+      $push: {
+        potd: {
+          date: today,
+          problemId,
+          status: 'solved',
+        },
       },
     };
 
