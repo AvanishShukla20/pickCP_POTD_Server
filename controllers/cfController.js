@@ -105,6 +105,18 @@ const markPOTD = async (req, res) => {
     //  Prepare today's date (UTC, YYYY-MM-DD)
     const today = new Date().toISOString().slice(0, 10);
 
+    // Check if the user already has a solved entry for today
+    const alreadyMarked = await User.exists({
+      _id: userId,
+      potd: { $elemMatch: { date: today, status: "solved" } },
+    });
+
+    if (alreadyMarked) {
+      return res
+        .status(400)
+        .json({ error: "You've already Solved A Problem Today !" });
+    }
+
     //  Upsert the POTD entry only if it's not already there
     const updatedUser = await User.findByIdAndUpdate(
       userId,
