@@ -73,7 +73,6 @@ const getRandomProblem = async (req, res) => {
 const markPOTD = async (req, res) => {
   try {
     const { problemId } = req.body;
-
     if (!problemId) {
       return res.status(400).json({ error: "Missing problemId in request body." });
     }
@@ -83,43 +82,53 @@ const markPOTD = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized request. User not authenticated." });
     }
 
-    const dbUser = await User.findById(userId).select('codeforcesHandle');
-    if (!dbUser || !dbUser.codeforcesHandle) {
+    //  Make sure the user has a Codeforces handle
+    const dbUser = await User.findById(userId).select("codeforcesHandle");
+    if (!dbUser?.codeforcesHandle) {
       return res.status(400).json({ error: "User's Codeforces handle is not set." });
     }
 
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    //  Verify the problem was actually solved on Codeforces
     const submissions = await getCFUserSubmissions(dbUser.codeforcesHandle);
-
-    const hasSolved = submissions.some(sub => {
-      return (
-        sub.verdict === 'OK' &&
+    const hasSolved = submissions.some(
+      (sub) =>
+        sub.verdict === "OK" &&
         `${sub.problem.contestId}-${sub.problem.index}` === problemId
-      );
-    });
+    );
 
     if (!hasSolved) {
-      return res.status(400).json({ error: "Problem not yet solved. Please submit on Codeforces first." });
+      return res.status(400).json({
+        error: "Problem not yet solved. Please submit on Codeforces first.",
+      });
     }
 
-    // Update user POTD status
-    const update = {
-      $push: {
-        potd: {
-          date: today,
-          problemId,
-          status: 'solved',
+    //  Prepare today's date (UTC, YYYY-MM-DD)
+    const today = new Date().toISOString().slice(0, 10);
+
+    //  Upsert the POTD entry only if it's not already there
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: {
+          potd: { date: today, problemId, status: "solved" },
         },
       },
-    };
+      { new: true }
+    ).select("potd");
 
-    const updated = await User.findByIdAndUpdate(userId, update, { new: true });
-
-    if (!updated) {
+    if (!updatedUser) {
       return res.status(404).json({ error: "User not found. POTD update failed." });
     }
 
-    res.status(200).json({ msg: "POTD marked as solved successfully.", potd: update.potd });
+    //  Extract all solved dates to send back to the client
+    const dates = updatedUser.potd
+      .filter((e) => e.status === "solved" && e.date)
+      .map((e) => e.date); // already in "YYYY-MM-DD" form
+
+    res.status(200).json({
+      msg: "POTD marked as solved successfully.",
+      dates, 
+    });
 
   } catch (err) {
     console.error("Error in markPOTD:", err.message);
