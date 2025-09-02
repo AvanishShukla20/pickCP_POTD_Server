@@ -5,6 +5,9 @@ const User = require('../models/User');
 // GET RANDOM PROBLEM
 const getRandomProblem = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ msg: "Unauthorized: token missing or invalid" });
+    }
     // Extract rating, tags, random, and handle from request body
     const { rating, tags = [], random, codeforcesHandle } = req.body;
 
